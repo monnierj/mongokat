@@ -1,9 +1,13 @@
 import pytest
 from pymongo import MongoClient
+import six
 
-import sys
-sys.path.append(".")
-import sample_models
+if six.PY3:
+    from tests import sample_models
+else:
+    import sys
+    sys.path.append(".")
+    import sample_models
 
 
 @pytest.fixture(scope="function")

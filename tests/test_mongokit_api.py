@@ -31,6 +31,8 @@
 #
 
 
+from __future__ import print_function
+import six
 from bson.objectid import ObjectId
 from pymongo import ReadPreference
 import pytest
@@ -82,7 +84,7 @@ class TestMongokitApi:
         class MyDoc(Document):
             structure = {
                 "bla":{
-                    "foo":unicode,
+                    "foo":six.text_type,
                     "bar":int,
                 },
                 "spam":[],
@@ -95,18 +97,18 @@ class TestMongokitApi:
         assert isinstance(mydoc['_id'], ObjectId)
 
         saved_doc = self.col.find_one({"bla.bar":42})
-        for key, value in mydoc.iteritems():
+        for key, value in six.iteritems(mydoc):
             assert saved_doc[key] == value
 
         mydoc = self.col.MyDoc()
         mydoc["bla"]["foo"] = u"bar"
         mydoc["bla"]["bar"] = 43
         mydoc.save(uuid=True)
-        assert isinstance(mydoc['_id'], unicode)
+        assert isinstance(mydoc['_id'], six.text_type)
         assert mydoc['_id'].startswith("MyDoc"), mydoc['_id']
 
         saved_doc = self.col.find_one({"bla.bar":43})
-        for key, value in mydoc.iteritems():
+        for key, value in six.iteritems(mydoc):
             assert saved_doc[key] == value
 
     def test_save_without_collection(self):
@@ -141,7 +143,7 @@ class TestMongokitApi:
         class A(SchemaDocument):
             structure = {
                 "a":{"foo":int},
-                "bar":unicode
+                "bar":six.text_type
             }
         self.connection.register([A])
         a = self.col.A(gen_skel=False)
@@ -153,7 +155,7 @@ class TestMongokitApi:
         class A(SchemaDocument):
             structure = {
                 "a":{"foo":[int]},
-                "bar":{unicode:{"egg":int}}
+                "bar":{six.text_type:{"egg":int}}
             }
         self.connection.register([A])
         a = self.col.A(gen_skel=False)
@@ -164,8 +166,8 @@ class TestMongokitApi:
     def test_generate_skeleton3(self):
         class A(SchemaDocument):
             structure = {
-                "a":{"foo":[int], "spam":{"bla":unicode}},
-                "bar":{unicode:{"egg":int}}
+                "a":{"foo":[int], "spam":{"bla":six.text_type}},
+                "bar":{six.text_type:{"egg":int}}
             }
         self.connection.register([A])
         a = self.col.A(gen_skel=False)
@@ -374,12 +376,12 @@ class TestMongokitApi:
     def test_fetch_with_query(self):
         class DocA(Document):
             structure = {
-                "bar":unicode,
+                "bar":six.text_type,
                 "doc_a":{'foo':int},
             }
         class DocB(Document):
             structure = {
-                "bar":unicode,
+                "bar":six.text_type,
                 "doc_b":{"bar":int},
             }
         self.connection.register([DocA, DocB])
@@ -496,7 +498,7 @@ class TestMongokitApi:
         # boostraping
         for i in range(10):
             mydoc = mongokit.MyDoc()
-            mydoc['_id'] = unicode(i)
+            mydoc['_id'] = six.text_type(i)
             mydoc['foo'] = i
             mydoc.save()
 
@@ -632,7 +634,7 @@ class TestMongokitApi:
     def test_get_size(self):
         class MyDoc(Document):
             structure = {
-                "doc":{"foo":int, "bla":unicode},
+                "doc":{"foo":int, "bla":six.text_type},
             }
         self.connection.register([MyDoc])
 
@@ -657,7 +659,7 @@ class TestMongokitApi:
             structure = {"foo":int}
         self.connection.register([MyDoc])
 
-        for i in xrange(20):
+        for i in six.moves.xrange(20):
             mydoc = self.col.MyDoc()
             mydoc['foo'] = i
             mydoc.save()
@@ -751,7 +753,7 @@ class TestMongokitApi:
             use_dot_notation = True
             structure = {
                 "foo":int,
-                "bar":{"egg":unicode},
+                "bar":{"egg":six.text_type},
                 "toto":{"spam":{"bla":int}}
             }
 
@@ -771,7 +773,7 @@ class TestMongokitApi:
         return pytest.skip("no validation")
         class Doc(Document):
            structure = {
-               "foo": unicode,
+               "foo": six.text_type,
            }
         self.connection.register([Doc])
 
@@ -784,7 +786,7 @@ class TestMongokitApi:
     def test_distinct(self):
         class Doc(Document):
             structure = {
-                "foo": unicode,
+                "foo": six.text_type,
                 "bla": int
             }
         self.connection.register([Doc])
@@ -797,7 +799,7 @@ class TestMongokitApi:
             doc = self.col.Doc(doc={'foo':foo, 'bla':i})
             doc.save()
         assert self.col.find().distinct('foo') == ['blo', 'bla']
-        assert self.col.find().distinct('bla') == range(15)
+        assert self.col.find().distinct('bla') == [x for x in range(15)]
 
     def test_explain(self):
         return pytest.skip()
@@ -827,11 +829,14 @@ class TestMongokitApi:
         class Doc(Document):
             structure = {
                 "foo":OR(int, long),
-                "bar":unicode,
+                "bar":six.text_type,
             }
         self.connection.register([Doc])
         doc = self.col.Doc()
-        doc['foo'] = 12L
+        if six.PY2:
+            doc['foo'] = long(12)
+        else:
+            doc['foo'] = 12
         doc.save()
         fetch_doc = self.col.Doc.find_one()
         fetch_doc['bar'] = u'egg'
@@ -841,7 +846,7 @@ class TestMongokitApi:
         return pytest.skip("no validation")
         class Task(Document):
             structure = {
-                'extra' : unicode,
+                'extra' : six.text_type,
             }
             required_fields = ['extra']
             skip_validation = True
@@ -854,7 +859,7 @@ class TestMongokitApi:
         return pytest.skip("nope")
         class MyDoc(Document):
             structure = {
-                'foo':unicode
+                'foo':six.text_type
             }
         doc = MyDoc(collection=self.col)
         doc['foo'] = u'bla'
@@ -864,10 +869,10 @@ class TestMongokitApi:
         class MyDoc(Document):
             structure = {
                 'foo':{
-                    'bar':unicode,
+                    'bar':six.text_type,
                     'eggs':{'spam':int},
                 },
-                'bla':unicode
+                'bla':six.text_type
             }
         self.connection.register([MyDoc])
 
@@ -887,12 +892,12 @@ class TestMongokitApi:
 
         self.col.update({'_id':doc['_id']}, {'$set':{'foo.eggs.spam':2}})
 
-        print "******" * 20
-        print
+        print("******" * 20)
+        print()
 
         self.col.MyDoc.gen_skel = False
         doc2 = self.col.MyDoc.find_one({'_id':doc['_id']})
-        print doc2
+        print(doc2)
         assert doc2 == {'_id': 3, 'foo': {u'eggs': {u'spam': 2}, u'bar': u'mybar'}, 'bla': u'ble'}
 
         doc.reload()
@@ -981,7 +986,7 @@ class TestMongokitApi:
             }
         try:
             doc = self.connection.MyDoc()
-        except AttributeError, e:
+        except AttributeError as e:
             failed = True
             self.assertEqual(str(e), 'MyDoc: __collection__ attribute not '
               'found. You cannot specify the `__database__` attribute '
@@ -1044,7 +1049,7 @@ class TestMongokitApi:
         @self.connection.register
         class DocA(Root):
            __collection__ = "doca"
-           structure = {'title':unicode}
+           structure = {'title':six.text_type}
 
         doc = self.connection.DocA()
         doc['title'] = u'foo'
@@ -1059,14 +1064,14 @@ class TestMongokitApi:
         class DocA(Document):
            __database__ = 'test'
            __collection__ = "doca"
-           structure = {'title':unicode}
+           structure = {'title':six.text_type}
 
         doc = self.connection.DocA()
         doc['title'] = 'foo'
         failed = False
         try:
             doc.save()
-        except SchemaTypeError, e:
+        except SchemaTypeError as e:
             self.assertEqual(str(e), "title must be an instance of unicode not str")
             failed = True
         self.assertEqual(failed, True)
@@ -1083,7 +1088,7 @@ class TestMongokitApi:
         failed = False
         try:
             doc.save()
-        except SchemaTypeError, e:
+        except SchemaTypeError as e:
             self.assertEqual(str(e), "title must be an instance of str not unicode")
             failed = True
         self.assertEqual(failed, True)
@@ -1116,7 +1121,7 @@ class TestMongokitApi:
         failed = False
         try:
             doc.save()
-        except SchemaTypeError, e:
+        except SchemaTypeError as e:
             self.assertEqual(str(e), "foo must be an instance of int not float")
             failed = True
         self.assertEqual(failed, True)
@@ -1133,7 +1138,7 @@ class TestMongokitApi:
         failed = False
         try:
             doc.save()
-        except SchemaTypeError, e:
+        except SchemaTypeError as e:
             self.assertEqual(str(e), "foo must be an instance of float not int")
             failed = True
         self.assertEqual(failed, True)

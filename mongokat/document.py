@@ -1,5 +1,6 @@
 import base64
 import copy
+import six
 from .utils import dotdict
 from uuid import UUID, uuid4
 from bson import BSON
@@ -41,7 +42,7 @@ class Document(dict):
             self.gen_skel = gen_skel
 
         if doc is not None:
-            for k, v in doc.iteritems():
+            for k, v in six.iteritems(doc):
                 self[k] = v
 
         if not self._fetched_fields:
@@ -99,7 +100,7 @@ class Document(dict):
         if not db_fields:
             return
 
-        for k, v in db_fields.iteritems():
+        for k, v in six.iteritems(db_fields):
             self[k] = v
 
     def unset_fields(self, fields):
@@ -154,7 +155,7 @@ class Document(dict):
 
         if '_id' not in self:
             if uuid:
-                self['_id'] = unicode("%s-%s" % (self.mongokat_collection.__class__.__name__, uuid4()))
+                self['_id'] = six.text_type("%s-%s" % (self.mongokat_collection.__class__.__name__, uuid4()))
 
         return self.mongokat_collection.save(self, **kwargs)
 
@@ -184,7 +185,7 @@ class Document(dict):
 
         self.mongokat_collection.update_one({"_id": self["_id"]}, {"$set": data}, **kwargs)
 
-        for k, v in data.iteritems():
+        for k, v in six.iteritems(data):
             apply_on[k] = v
 
         self.update(dict(apply_on))

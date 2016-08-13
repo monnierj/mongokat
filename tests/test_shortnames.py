@@ -1,3 +1,4 @@
+from __future__ import print_function
 from mongokat import Document, Collection
 
 
@@ -36,7 +37,7 @@ def test_shortnames(db):
   doc.save()
 
   docs = list(SN.find())
-  print docs
+  print(docs)
   assert len(docs) == 1
   assert docs[0]["regular"] == "1"
 
@@ -44,8 +45,8 @@ def test_shortnames(db):
   docs[0].save()
 
   docs = list(SN.find())
-  print docs
-  print dict(docs[0])
+  print(docs)
+  print(dict(docs[0]))
   assert len(docs) == 1
   assert docs[0]["value"] == "2"
   assert docs[0]["v"] == "2"

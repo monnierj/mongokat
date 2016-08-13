@@ -1,4 +1,4 @@
-pytest==2.7.0
-pytest-circleci==0.0.2
-pytest-html==1.0
+pytest==2.8.0
+-e git+https://github.com/dustinfarris/pytest-circleci@python-3#egg=pytest-circleci
+pytest-html==1.10
 pytest-cov==1.8.1
